@@ -8,6 +8,9 @@ export default class Slide {
   index: number;
   slide: Element;
   timeout: Timeout | null;
+  paused: boolean;
+  pausedTimeout: Timeout | null;
+
   constructor(
     container: Element,
     slides: Element[],
@@ -21,6 +24,8 @@ export default class Slide {
     this.index = 0;
     this.slide = this.slides[this.index];
     this.timeout = null;
+    this.paused = false;
+    this.pausedTimeout = null;
 
     this.onInit();
   }
@@ -37,16 +42,39 @@ export default class Slide {
     nextButton.innerText = "Próximo slide";
     this.controls.appendChild(prevButton);
     this.controls.appendChild(nextButton);
+
+    this.controls.addEventListener("pointerdown", () => this.pause());
+    this.controls.addEventListener("pointerup", () => this.continue());
+
     prevButton.addEventListener("pointerup", () => this.prev());
     nextButton.addEventListener("pointerup", () => this.next());
   }
 
+  pause() {
+    console.log("pause", this.timeout)
+    this.pausedTimeout = new Timeout(() => {
+        this.timeout?.pause();
+        this.paused = true;
+    }, 300);
+  }
+
+  continue() {
+    console.log("continue")
+    this.pausedTimeout?.clear();
+    if (this.paused) {
+        this.paused = false;
+        this.timeout?.continue();
+    }
+  }
+
   prev() {
+    if (this.paused) return;
     const prev = this.index > 0 ? this.index - 1 : this.slides.length - 1;
     this.showSlide(prev);
   }
 
   next() {
+    if (this.paused) return;
     const next = this.index + 1 < this.slides.length ? this.index + 1 : 0;
     this.showSlide(next);
   }
